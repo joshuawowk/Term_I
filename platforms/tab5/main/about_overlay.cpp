@@ -83,7 +83,7 @@ extern "C" void spectra5_show_about()
     lv_obj_set_flex_flow(col, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_scroll_dir(col, LV_DIR_VER);
 
-    lv_obj_t* title = text(col, "SLAVE I", SemanticColor::TextPrimary, &ibm_plex_mono_32);
+    lv_obj_t* title = text(col, "TERM_I", SemanticColor::TextPrimary, &ibm_plex_mono_32);
     lv_obj_set_style_text_letter_space(title, 6, 0);
     text(col, "Offensive wireless toolkit for the M5Stack Tab5", SemanticColor::Accent,
          &ibm_plex_mono_18);
