@@ -2,11 +2,14 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <string>
 #include <vector>
 
 extern "C" {
+#include "esp_heap_caps.h"
 #include "esp_hosted_api.h"
 }
 
@@ -18,6 +21,33 @@ extern "C" {
 #include "services/radio/probe_store.hpp"
 #include "services/radio/sniffer_store.hpp"
 #include "services/radio/radio_console.hpp"
+
+// esp_hosted host->C6 private-command channel. The upstream repo depends on an
+// (uncommitted) esp_hosted patch that adds esp_hosted_send_priv_command; we define
+// it here so Term_I builds against the stock esp_hosted managed component. It sends
+// an esp_priv event (type 0x55 = SPECTRA5_PRIV_EVENT_COMMAND, matched by the C6's
+// spectra5_offensive process_priv_pkt) on the ESP_PRIV_IF (=5) interface.
+extern "C" {
+// esp_hosted internal transport send, linked from the esp_hosted component.
+int esp_hosted_tx(
+    uint8_t iface_type, uint8_t iface_num, uint8_t *buffer, uint16_t len, uint8_t buff_zerocopy,
+    void (*free_buf_fun)(void *)
+);
+
+esp_err_t esp_hosted_send_priv_command(const uint8_t *data, uint8_t len) {
+    if (!data && len) return ESP_ERR_INVALID_ARG;
+    const uint16_t total = static_cast<uint16_t>(2 + len);
+    // DMA-capable buffer; esp_hosted_tx takes ownership and frees it via free() after TX.
+    uint8_t *buf = static_cast<uint8_t *>(heap_caps_malloc(total, MALLOC_CAP_DMA | MALLOC_CAP_8BIT));
+    if (!buf) return ESP_ERR_NO_MEM;
+    buf[0] = 0x55; // event_type = SPECTRA5_PRIV_EVENT_COMMAND
+    buf[1] = len;  // event_len
+    if (len) std::memcpy(buf + 2, data, len);
+    const int r = esp_hosted_tx(5 /*ESP_PRIV_IF*/, 0, buf, total, 0 /*no zerocopy*/, free);
+    return (r == ESP_OK) ? ESP_OK : ESP_FAIL;
+}
+} // extern "C"
+
 #include "services/radio/station_store.hpp"
 #include "services/radio/zigbee_store.hpp"
 #include "services/storage/sd_logger.hpp"

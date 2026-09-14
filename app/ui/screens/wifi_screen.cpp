@@ -1121,7 +1121,7 @@ namespace {
 const char* const kFunnyNames[] = {
     "FBI Surveillance Van",     "Free WiFi",         "Pretty Fly for a WiFi", "Tell My WiFi Love Her",
     "Drop It Like Its Hotspot", "Loading...",        "VIRUS.exe",             "It Hurts When IP",
-    "The Promised LAN",         "Wu-Tang LAN",       "Slave I",               "Mom Click Here",
+    "The Promised LAN",         "Wu-Tang LAN",       "LANdo Calrissian",      "Mom Click Here",
     "404 Network Not Found",    "No Free WiFi Here", "Hide Yo WiFi",          "NSA Listening Post",
 };
 constexpr int kFunnyCount             = static_cast<int>(sizeof(kFunnyNames) / sizeof(kFunnyNames[0]));

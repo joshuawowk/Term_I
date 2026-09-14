@@ -92,7 +92,7 @@ void show_boot_splash()
     lv_obj_align(img, LV_ALIGN_CENTER, 0, -110);
 
     lv_obj_t* title = lv_label_create(ov);
-    lv_label_set_text(title, "SLAVE I");
+    lv_label_set_text(title, "TERM_I");
     lv_obj_set_style_text_color(title, lv_semantic(SemanticColor::TextPrimary), 0);
     lv_obj_set_style_text_font(title, &ibm_plex_mono_32, 0);
     lv_obj_set_style_text_letter_space(title, 8, 0);
