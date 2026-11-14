@@ -5,6 +5,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+- The C6 radio firmware is no longer flashed unasked. When the C6 needs provisioning,
+  a *Replace the radio firmware?* dialog explains that other firmware on the Tab5
+  needing a different C6 firmware (e.g. Sentinel Bootloader, esp-hosted 2.12 builds)
+  lose Wi-Fi until the C6 is flashed back. *Flash radio* provisions as before; *Not
+  now*, Esc or a 60 s timeout start the app with the radio unprovisioned and ask
+  again next start.
+
+### Added
+- `-DTERMI_C6_FLASH_DRYRUN=1` build switch: compiles the esp_hosted OTA calls
+  (`rpc_ota_*`) out, so *Flash radio* only logs. For hardware tests of the prompt.
+
 ## [0.1.0] — first private cut
 
 ### Fixed

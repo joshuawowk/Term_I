@@ -60,9 +60,21 @@ detected`.
 Term_I is a full-flash firmware. It's loaded via the **bmorcelli M5StackLauncher**
 (sibling repo): put `term-i-p4-factory.bin` on the Tab5 SD and install it from the
 Launcher's SD menu (extracts app + creates the SPIFFS data partitions), or flash at
-`0x0` with esptool. First boot provisions the C6 over the air (~15 s "ARMING RADIO"
-/ `C6 provisioned OK`) then reboots. See that repo's `CLAUDE.md` for the load
+`0x0` with esptool. First boot **asks** "Replace the radio firmware?" (Flash radio /
+Not now; Esc or 60 s = Not now); on Flash radio it provisions the C6 over the air
+(~15 s "ARMING RADIO" / `C6 provisioned OK`) then reboots. See that repo's `CLAUDE.md` for the load
 workflow and the SD-card quirk.
+
+## C6 flashing: ask first, dry-run for tests
+
+The C6 is shared by every firmware on the Tab5 (Sentinel Bootloader and esp-hosted
+2.12 builds need a different C6 firmware), so `app_main.cpp` calls
+`ask_c6_provision()` (`boot_splash.cpp`) before `provision_c6_and_reboot()`. Any image
+you put on shared hardware for testing must be built with
+`-DTERMI_C6_FLASH_DRYRUN=1`: `rpc_ota_*` is compiled out of `c6_updater.cpp`. Check
+with `riscv32-esp-elf-nm build/m5stack_tab5.elf | grep rpc_ota` (must print nothing)
+before installing. Use a separate `-B` build dir per setting, because the flag is
+cached. A small placeholder `network_adapter.bin` is enough for a dry-run build.
 
 ## Gotchas
 
