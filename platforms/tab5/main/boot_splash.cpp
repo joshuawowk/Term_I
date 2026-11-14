@@ -386,7 +386,8 @@ bool ask_c6_provision(unsigned timeout_s)
     lv_group_set_wrap(group, true);
     lv_group_add_obj(group, not_now);
     lv_group_add_obj(group, flash);
-    lv_group_focus_obj(not_now);  // the default answer
+    lv_group_focus_obj(not_now);                   // the default answer...
+    lv_obj_add_state(not_now, LV_STATE_FOCUS_KEY);  // ...shown with the focus ring from the start
     constexpr std::size_t kMaxKeypads = 4;
     lv_indev_t* keypads[kMaxKeypads]   = {};
     lv_group_t* prev_group[kMaxKeypads] = {};
