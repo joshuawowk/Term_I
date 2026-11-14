@@ -17,6 +17,10 @@
 #include "boot_splash.hpp"
 #include "core/diagnostics/log.hpp"
 
+// TERMI_C6_FLASH_DRYRUN (CMake -DTERMI_C6_FLASH_DRYRUN=1): test build that can never
+// change the C6 firmware. The esp_hosted OTA RPC below is compiled out entirely, so no
+// rpc_ota_* reference reaches the linker; flashing only logs what it would do.
+#ifndef TERMI_C6_FLASH_DRYRUN
 // esp_hosted host-side OTA RPC helpers (granular begin/write/end). Declared here
 // to avoid pulling esp_hosted's internal rpc_wrap.h; the symbols live in the
 // linked esp_hosted component.
@@ -25,6 +29,7 @@ int rpc_ota_begin(void);
 int rpc_ota_write(uint8_t* ota_data, uint32_t ota_data_len);
 int rpc_ota_end(void);
 }
+#endif
 
 namespace spectra5::platform {
 
@@ -33,6 +38,20 @@ constexpr const char* kTag = "c6-ota";
 constexpr std::size_t kChunk = 1400;  // mirrors esp_hosted's OTA chunk size
 }  // namespace
 
+#ifdef TERMI_C6_FLASH_DRYRUN
+esp_err_t flash_c6_from_file(const char* path)
+{
+    spectra5::log::tagWarn(kTag, "DRY RUN: would OTA {} to the C6 -- C6 untouched", path);
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+esp_err_t flash_c6_from_buffer(const uint8_t* data, std::size_t len)
+{
+    (void)data;
+    spectra5::log::tagWarn(kTag, "DRY RUN: would OTA {} bytes to the C6 -- C6 untouched", len);
+    return ESP_ERR_NOT_SUPPORTED;
+}
+#else
 esp_err_t flash_c6_from_file(const char* path)
 {
     FILE* f = std::fopen(path, "rb");
@@ -115,6 +134,7 @@ esp_err_t flash_c6_from_buffer(const uint8_t* data, std::size_t len)
     spectra5::log::tagInfo(kTag, "C6 OTA complete: {} bytes flashed; C6 will reboot", len);
     return ESP_OK;
 }
+#endif  // TERMI_C6_FLASH_DRYRUN
 
 // --- First-boot auto-provisioning -------------------------------------------
 
@@ -147,7 +167,7 @@ void ensure_nvs()
     }
 }
 
-void record_provisioned(uint32_t crc)
+[[maybe_unused]] void record_provisioned(uint32_t crc)  // unused in dry-run builds
 {
     nvs_handle_t h;
     if (nvs_open(kNvsNs, NVS_READWRITE, &h) == ESP_OK) {
@@ -186,6 +206,15 @@ void provision_c6_and_reboot()
     spectra5::log::tagInfo(kTag, "provisioning C6 radio: embedded image {} bytes, crc {:08x}", len,
                            crc);
 
+#ifdef TERMI_C6_FLASH_DRYRUN
+    // Dry run: no hosted bring-up, no OTA, no NVS marker (so the next start asks
+    // again), no reboot. Return like a failed flash so the normal app starts.
+    spectra5::log::tagWarn(kTag,
+                           "DRY RUN: would start esp_hosted, OTA the embedded image to the C6, "
+                           "record its CRC in NVS and reboot -- C6 and NVS untouched, "
+                           "continuing to normal boot");
+    vTaskDelay(pdMS_TO_TICKS(2000));  // leave the overlay up long enough to see on a test run
+#else
     // Bring up the minimal hosted stack (mirrors the proven deploy path). These are
     // idempotent-ish; ignore "already initialised" on a warm path.
     esp_netif_init();
@@ -207,6 +236,7 @@ void provision_c6_and_reboot()
                             "C6 provisioning failed: {} -- continuing to normal boot "
                             "(radio will report unprovisioned)",
                             esp_err_to_name(e));
+#endif  // TERMI_C6_FLASH_DRYRUN
 }
 
 }  // namespace spectra5::platform

@@ -145,14 +145,26 @@ extern "C" void app_main(void)
     }
 #endif
 
-    // First-boot (or post-update) auto-provisioning of the C6 radio from the image
-    // embedded in this firmware. Skipped on normal boots (NVS remembers the flashed
-    // image CRC). On success the P4 reboots into a clean start; on failure it logs
-    // and falls through so the app still runs (the radio just reports unprovisioned).
+    // First-boot (or post-update) provisioning of the C6 radio from the image embedded
+    // in this firmware. Skipped on normal boots (NVS remembers the flashed image CRC).
+    // The C6 is shared with every other firmware on this Tab5 (e.g. Sentinel Bootloader
+    // and esp-hosted 2.12 builds need a different C6 firmware), so ASK first. Not now,
+    // Esc or the timeout: the app runs with the radio unprovisioned and NVS untouched,
+    // so the question comes back on the next start. On a successful flash the P4
+    // reboots into a clean start; on failure it logs and falls through.
     if (spectra5::platform::c6_needs_provision()) {
-        spectra5::log::tagInfo("app", "C6 radio not provisioned -- flashing embedded image");
-        spectra5::platform::show_provisioning_overlay();  // spinner, so it doesn't look like a crash
-        spectra5::platform::provision_c6_and_reboot();
+        constexpr unsigned kC6AskTimeoutS = 60;
+        spectra5::log::tagInfo("app", "C6 radio not provisioned -- asking before flashing");
+        if (spectra5::platform::ask_c6_provision(kC6AskTimeoutS)) {
+            spectra5::log::tagInfo("app", "C6 flash confirmed -- flashing embedded image");
+            spectra5::platform::show_provisioning_overlay();  // spinner, so it doesn't look like a crash
+            spectra5::platform::provision_c6_and_reboot();
+            spectra5::platform::hide_provisioning_overlay();  // only reached if it did not reboot
+        } else {
+            spectra5::log::tagInfo("app",
+                                   "C6 flash declined (Not now / Esc / timeout) -- radio stays "
+                                   "unprovisioned; asking again next start");
+        }
     }
 
     while (!app::IsDone()) {

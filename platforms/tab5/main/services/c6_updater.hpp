@@ -30,7 +30,12 @@ bool c6_needs_provision();
 // Bring up the minimal hosted stack, OTA-push the embedded C6 image, record its
 // CRC in NVS on success, then esp_restart() for a clean normal boot. On failure it
 // logs and RETURNS so the normal app still starts (the radio reports unprovisioned).
-// Mirrors the proven deploy path, so it must run after app::Init().
+// Mirrors the proven deploy path, so it must run after app::Init(). The caller must
+// have asked the user first (ask_c6_provision() in boot_splash.hpp): the C6 is shared
+// with every other firmware on the Tab5.
+//
+// In a TERMI_C6_FLASH_DRYRUN build this (and flash_c6_from_file/_buffer) only logs
+// what it would do and returns -- no OTA, no NVS marker, no reboot.
 void provision_c6_and_reboot();
 
 }  // namespace spectra5::platform

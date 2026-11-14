@@ -6,8 +6,8 @@ The M5Stack Tab5 has two chips, and Slave I ships firmware for both:
 - **ESP32-C6** — the radio engine. Not reachable by cable on the Tab5.
 
 You **flash once** (the P4). The C6 firmware is bundled inside the P4 image and is
-flashed automatically, over the air, on the first boot. There is no second step and
-no microSD required.
+flashed over the air on the first boot, **after you confirm it** on screen. There is
+no second step and no microSD required.
 
 ## How installation works
 
@@ -15,7 +15,9 @@ no microSD required.
 flowchart TD
     A["Flash the P4 factory image<br/>(web flasher or esptool)"] --> B["Tab5 reboots"]
     B --> C{"Is the C6 already running<br/>this firmware?"}
-    C -->|"No — first boot, or the C6 image changed"| D["Screen shows: ARMING RADIO"]
+    C -->|"No — first boot, or the C6 image changed"| Q{"Replace the radio firmware?<br/>(Flash radio / Not now, 60 s)"}
+    Q -->|"Not now, Esc or timeout"| H
+    Q -->|"Flash radio"| D["Screen shows: ARMING RADIO"]
     D --> E["P4 flashes the embedded C6 image over the air<br/>(~15 s, dual-slot A/B with auto-rollback)"]
     E --> F["Store the image CRC in NVS"]
     F --> G["Reboot"]
@@ -27,6 +29,12 @@ flowchart TD
 The C6 provisioning runs **once**: the P4 records the flashed image's CRC in NVS, so
 every later boot skips it and goes straight to normal operation. It runs again only
 after a firmware update that changes the C6 image.
+
+**Why it asks first:** the C6 is shared by every firmware on the Tab5. Flashing it
+replaces whatever C6 firmware is there now, so other firmware that needs a different
+one (e.g. Sentinel Bootloader and builds for esp-hosted 2.12) lose Wi-Fi until the C6
+is flashed back. *Not now* (also Esc, or no answer within 60 s) starts the app with
+the radio unprovisioned and asks again on the next start.
 
 ## Flash the P4
 
@@ -54,8 +62,9 @@ with the C6 image embedded).
 
 ## First boot
 
-The first boot shows an **ARMING RADIO** screen with a spinner for ~15 s while the
-P4 provisions the C6, then the Tab5 reboots once into Slave I. This is expected —
+The first boot asks **Replace the radio firmware?** Choose *Flash radio* (touch, or
+arrows/Tab + Enter on the keyboard). An **ARMING RADIO** screen with a spinner then
+shows for ~15 s while the P4 provisions the C6, and the Tab5 reboots once into Slave I. This is expected —
 don't unplug during it. Serial shows `[c6-ota] C6 provisioned OK`. If provisioning
 ever fails, the Tab5 still boots and retries on the next boot (the status bar shows
 `C6 --` until the radio is up).
@@ -80,6 +89,7 @@ See [`README.md`](README.md) for details.
 - **Port disappears mid-flash** — unplug/replug the USB-C and retry.
 - **Web flasher can't see the device** — use Chrome/Edge on desktop, close any
   serial monitor holding the port, try a different cable/port.
-- **Radio features dead** — the first-boot C6 provisioning may not have completed;
-  reboot and watch for the ARMING RADIO screen. The status bar shows `C6 --` until
+- **Radio features dead** — the C6 was not provisioned (you chose *Not now*, or the
+  flash did not complete); reboot, choose *Flash radio*, and watch for the ARMING
+  RADIO screen. The status bar shows `C6 --` until
   the C6 is provisioned.

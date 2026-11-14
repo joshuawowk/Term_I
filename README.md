@@ -65,9 +65,9 @@ Real talk: don't be a caraculo or a scriptkiddie.
 
 **Flash once from your browser:** open the **[web flasher](https://0day1day.github.io/Slave_I/)**
 in Chrome or Edge, connect the Tab5 by USB-C, and click *Install*. That's the whole
-install — the ESP32-C6 radio firmware is bundled in the P4 image and provisions
-itself automatically on the first boot (an *ARMING RADIO* screen for ~15 s, then one
-reboot). No microSD, no second step.
+install — the ESP32-C6 radio firmware is bundled in the P4 image and is flashed on
+the first boot once you confirm it (*Replace the radio firmware?* → *Flash radio*; an
+*ARMING RADIO* screen for ~15 s, then one reboot). No microSD, no second step.
 
 Prefer a cable? Use `esptool` with the release `*-p4-factory.bin`. Full guide and a
 diagram of the flow in **[INSTALL.md](INSTALL.md)**.
@@ -99,7 +99,7 @@ and **ESP-IDF 5.4.2** (only for the on-device build).
 Slave I splits work across two chips: the **P4** runs the UI and orchestrates,
 the **C6** runs a native radio engine and executes attacks, driven over an RPC
 protocol on the hosted link. The C6 firmware is embedded in the P4 image and
-auto-provisioned over the air on the first boot.
+provisioned over the air on the first boot, after the user confirms it.
 
 ## License & credits
 

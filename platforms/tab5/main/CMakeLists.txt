@@ -47,6 +47,15 @@ endif()
 target_add_binary_data(${COMPONENT_LIB} "${C6_IMAGE}" BINARY)
 message(STATUS "Slave I: embedding C6 image for auto-provision (${C6_IMAGE})")
 
+# Test/safety build: `idf.py -DTERMI_C6_FLASH_DRYRUN=1 build`. The esp_hosted OTA RPC
+# (rpc_ota_*) is compiled out of c6_updater.cpp, so "Flash radio" only logs what it would
+# do and this image cannot change the C6 firmware. Use it for any hardware test of the
+# flash prompt.
+if(TERMI_C6_FLASH_DRYRUN)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE TERMI_C6_FLASH_DRYRUN=1)
+    message(STATUS "Term_I: C6 flash DRY RUN -- rpc_ota_* compiled out, the C6 is never flashed")
+endif()
+
 # Deploy-only build: provision the C6 then halt (legacy manual path, still works).
 # `idf.py -DSPECTRA5_C6_OTA=1 build`.
 if(SPECTRA5_C6_OTA)
